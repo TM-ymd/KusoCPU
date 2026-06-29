@@ -168,21 +168,12 @@ int test_cpu(void) {
 
     show_all_registers();
     // these functions below use malloc, so we need to free it
-    char **instruction1 = cpu_instruction_fetch(CPU_INSTRUCTION_TYPE_ADD);
-    char **instruction2 = cpu_instruction_fetch(CPU_INSTRUCTION_TYPE_SUB);
-    char **instruction3 = cpu_instruction_fetch(CPU_INSTRUCTION_TYPE_MOV);
-    char **instruction4 = cpu_instruction_fetch(CPU_INSTRUCTION_TYPE_JMP);
-    char **instruction5 = cpu_instruction_fetch(CPU_INSTRUCTION_TYPE_CMP);
-    show_instruction(instruction1);
-    show_instruction(instruction2);
-    show_instruction(instruction3);
-    show_instruction(instruction4);
-    show_instruction(instruction5);
-    cpu_instruction_parser(instruction1);
-    cpu_instruction_parser(instruction2);
-    cpu_instruction_parser(instruction3);
-    cpu_instruction_parser(instruction4);
-    cpu_instruction_parser(instruction5);
+    char **instructions[5];
+    for (int i = 0; i < 5; i++) {
+        instructions[i] = cpu_instruction_fetch(i);
+        show_instruction(instructions[i]);
+        cpu_instruction_parser(instructions[i]);
+    }
     show_all_registers();
     //set_register_2_to_1();
     if (!check_register_value()) {
@@ -192,11 +183,9 @@ int test_cpu(void) {
     }
     printf("success\n");
 free_and_return:
-    free(instruction1);
-    free(instruction2);
-    free(instruction3);
-    free(instruction4);
-    free(instruction5);
+    for (int i = 0; i < 5; i++) {
+        free(instructions[i]);
+    }
     return return_value;
 }
 
