@@ -134,8 +134,8 @@ int check_register_value(void) {
         return 0;
     }
     printf("pass: JMP\n");
-    if (reg[2].value != -30) {
-        printf("failed: CMP (R0 - R4 = -30, but %02X)\n", reg[2].value);
+    if (reg[2].value != -26) {
+        printf("failed: CMP (R0 - R4 = -26, but %02X)\n", reg[2].value);
         return 0;
     }
     return 1;
@@ -154,7 +154,7 @@ int test_cpu(void) {
     char *instructions[5];
     struct cpu_register *pc = &reg[0];
     for (; pc->value < 5; pc->value++) {
-        instructions[pc->value] = cpu_instruction_fetch(pc->value);
+        instructions[pc->value] = cpu_instruction_fetch(pc->value + 1);
         show_instruction(instructions[pc->value]);
         cpu_instruction_execute(instructions[pc->value]);
     }
