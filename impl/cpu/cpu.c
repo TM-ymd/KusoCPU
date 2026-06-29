@@ -21,58 +21,48 @@ struct cpu_register reg[10] = {
     {"R9", 0x00}, // general purpose register 3
 };
 
-enum cpu_instruction_type {
-    CPU_INSTRUCTION_TYPE_ADD = 0,
-    CPU_INSTRUCTION_TYPE_SUB = 1,
-    CPU_INSTRUCTION_TYPE_MOV = 2,
-    CPU_INSTRUCTION_TYPE_JMP = 3,
-    CPU_INSTRUCTION_TYPE_CMP = 4,
-};
 
-void cpu_exec_add(char *val1, char *val2, char *register_name) {
-    int val1_int = strtol(val1, NULL, 10);
-    int val2_int = strtol(val2, NULL, 10);
-    int register_index = atoi(register_name + 1);
-    reg[register_index].value = val1_int + val2_int;
+void cpu_exec_add(char val1, char val2, char register_index) {
+    // char は文字でなく 1 バイトの数字として扱うので操作不要
+    reg[register_index].value = val1 + val2;
 }
 
-void cpu_exec_sub(char *val1, char *val2, char *register_name) {
-    int val1_int = strtol(val1, NULL, 10);
-    int val2_int = strtol(val2, NULL, 10);
-    int register_index = atoi(register_name + 1);
-    reg[register_index].value = val1_int - val2_int;
+void cpu_exec_sub(char val1, char val2, char register_index) {
+    // char は文字でなく 1 バイトの数字として扱うので操作不要
+    reg[register_index].value = val1 - val2;
 }
 
 /***
 まずは即値だけ
  ***/
-void cpu_exec_mov(char *val, char *register_name) {
-    int val_int = strtol(val, NULL, 10);
-    int register_index = atoi(register_name + 1);
-    reg[register_index].value = val_int;
+void cpu_exec_mov(char val, char register_index) {
+    reg[register_index].value = val;
 }
 
-void cpu_exec_jmp(char *label) {
+void cpu_exec_jmp(char label) {
     (void)label;
     printf("TODO: 命令リストでのテスト時に実装\n");
 }
 
-void cpu_exec_cmp(char *register1, char *register2) {
-    int register1_index = atoi(register1 + 1);
-    int register2_index = atoi(register2 + 1);
+void cpu_exec_cmp(char register1_index, char register2_index) {
     reg[2].value = reg[register1_index].value - reg[register2_index].value;
 }
 
-int cpu_instruction_parser(char **instruction) {
-    if (strcmp(instruction[0], "ADD") == 0) {
+int cpu_instruction_execute(char *instruction) {
+    // ADD
+    if (instruction[0] == 0x01) {
         cpu_exec_add(instruction[1], instruction[2], instruction[3]);
-    } else if (strcmp(instruction[0], "SUB") == 0) {
+    // SUB
+    } else if (instruction[0] == 0x02) {
         cpu_exec_sub(instruction[1], instruction[2], instruction[3]);
-    } else if (strcmp(instruction[0], "MOV") == 0) {
+    // MOV
+    } else if (instruction[0] == 0x03) {
         cpu_exec_mov(instruction[1], instruction[2]);
-    } else if (strcmp(instruction[0], "JMP") == 0) {
+    // JMP
+    } else if (instruction[0] == 0x04) {
         cpu_exec_jmp(instruction[1]);
-    } else if (strcmp(instruction[0], "CMP") == 0) {
+    // CMP
+    } else if (instruction[0] == 0x05) {
         cpu_exec_cmp(instruction[1], instruction[2]);
     } else {
         printf("Invalid instruction\n");
@@ -80,49 +70,42 @@ int cpu_instruction_parser(char **instruction) {
     return 0;
 }
 
-char **cpu_instruction_fetch_test(int instruction_number) {
-    char **instruction = malloc(sizeof(char *) * 5);
+char *cpu_instruction_fetch_test(int instruction_number) {
+    char *instruction = malloc(sizeof(char) * 5);
     switch (instruction_number) {
-        case CPU_INSTRUCTION_TYPE_ADD:
-            instruction[0] = "ADD";
-            instruction[1] = "10";
-            instruction[2] = "20";
-            instruction[3] = "R4";
-            instruction[4] = NULL;
+        case 0x01: // ADD
+            instruction[1] = 10;
+            instruction[2] = 20;
+            instruction[3] = 0x04;
             break;
-        case CPU_INSTRUCTION_TYPE_SUB:
-            instruction[0] = "SUB";
-            instruction[1] = "10";
-            instruction[2] = "20";
-            instruction[3] = "R8";
-            instruction[4] = NULL;
+        case 0x02: // SUB
+            instruction[1] = 10;
+            instruction[2] = 20;
+            instruction[3] = 0x08;
             break;
-        case CPU_INSTRUCTION_TYPE_MOV:
-            instruction[0] = "MOV";
-            instruction[1] = "10";
-            instruction[2] = "R9";
-            instruction[3] = NULL;
+        case 0x03: // MOV
+            instruction[1] = 10;
+            instruction[2] = 0x09;
             break;
-        case CPU_INSTRUCTION_TYPE_JMP:
-            instruction[0] = "JMP";
-            instruction[1] = "label";
-            instruction[2] = NULL;
+        case 0x04: // JMP
+            // TODO: 命令リストでのテスト時に具体的なジャンプ先を指定
+            instruction[1] = 0x00;
             break;
-        case CPU_INSTRUCTION_TYPE_CMP:
-            instruction[0] = "CMP";
-            instruction[1] = "R0";
-            instruction[2] = "R4";
-            instruction[3] = NULL;
+        case 0x05: // CMP
+            instruction[1] = 0x00;
+            instruction[2] = 0x04;
             break;
         default:
             printf("Invalid instruction number\n");
             break;
     }
+    instruction[0] = instruction_number;
     return instruction;
 }
 
-char **cpu_instruction_fetch(int instruction_number) {
+char *cpu_instruction_fetch(int instruction_number) {
     return cpu_instruction_fetch_test(instruction_number);
+    // TODO: 実際のバイト列を 1 バイトずつ読み込んで instruction に格納する処理の実装
 }
 
 void show_all_registers(void) {
@@ -131,9 +114,9 @@ void show_all_registers(void) {
     }
 }
 
-void show_instruction(char **instruction) {
-    for (int i = 0; instruction[i] != NULL; i++) {
-        printf("%s\n", instruction[i]);
+void show_instruction(char *instruction) {
+    for (int i = 0; i < 5; i++) {
+        printf("%02X\n", instruction[i]);
     }
 }
 
@@ -168,11 +151,12 @@ int test_cpu(void) {
 
     show_all_registers();
     // these functions below use malloc, so we need to free it
-    char **instructions[5];
-    for (int i = 0; i < 5; i++) {
-        instructions[i] = cpu_instruction_fetch(i);
-        show_instruction(instructions[i]);
-        cpu_instruction_parser(instructions[i]);
+    char *instructions[5];
+    struct cpu_register *pc = &reg[0];
+    for (; pc->value < 5; pc->value++) {
+        instructions[pc->value] = cpu_instruction_fetch(pc->value);
+        show_instruction(instructions[pc->value]);
+        cpu_instruction_execute(instructions[pc->value]);
     }
     show_all_registers();
     //set_register_2_to_1();
